@@ -205,10 +205,10 @@ foreach my $i (split(':', $ENV{'PATH'}))
 
 nagexit('UNKNOWN', "Binary not found ($sql_bin).\nMaybe you want to source the init script (/var/opt/sesam/var/ini/sesam2000.profile)?") unless defined($sql_path);
 
-# my $query = "select c.name,l.name as location,r.task,r.start_tim,r.stop_tim,(round((r.blocks/1024.),2) || 'MB') as size,r.throughput,s.state,r.msg from clients as c left join locations as l on c.location=l.id  left join results as r on r.client=c.name left join cal_sheets as s on r.saveset=s.id where r.stop_tim >'".$after."' and (s.state<>'a' or s.state is null)";
-my $query = "select c.name,l.name as location,r.task,r.start_tim,r.stop_tim,(round((r.blocks/1024.),2) || 'MB') as size,r.throughput,r.state,r.msg from clients as c left join locations as l on c.location=l.id  left join results as r on r.client=c.name where r.stop_tim >'".$after."' and r.state<>'a'";
+# my $query = "select c.name,l.name as location,r.task,r.start_time,r.stop_time,(round((r.blocks/1024.),2) || 'MB') as size,r.throughput,s.state,r.msg from clients as c left join locations as l on c.location=l.id  left join results as r on r.client=c.name left join cal_sheets as s on r.saveset=s.id where r.stop_time >'".$after."' and (s.state<>'a' or s.state is null)";
+my $query = "select c.name,l.name as location,r.task,r.start_time,r.stop_time,(round((r.blocks/1024.),2) || 'MB') as size,r.throughput,r.state,r.msg from clients as c left join locations as l on c.location=l.id  left join results as r on r.client=c.name where r.stop_time >'".$after."' and r.state<>'a'";
 
-$query .= " and r.stop_tim <='".timetToIso8601($until)."'" if ($until);
+$query .= " and r.stop_time <='".timetToIso8601($until)."'" if ($until);
 
 
 if ($hostname =~ /,/)
@@ -236,7 +236,6 @@ if ($task)
 	}
 }
 
-print "$sql_path/$sql_bin \"$query\"\n";
 my $retval = `$sql_path/$sql_bin "$query"`;
 
 nagexit('UNKNOWN', "$sql_path/$sql_bin returned error ".($? >> 8).".\nMaybe you want to source the init script (/var/opt/sesam/var/ini/sesam2000.profile) in your start script?") if ($? gt 0);
@@ -251,7 +250,7 @@ foreach my $i (split('\n', $retval))
 foreach my $i (@results)
 {
 	my $status = convertState($$i{'state'});
-	$statusline .= "$status: $$i{'location'}/$$i{'name'}/$$i{'task'} $$i{'start_tim'}\n";
+	$statusline .= "$status: $$i{'location'}/$$i{'name'}/$$i{'task'} $$i{'start_time'}\n";
 
 	my $size = $$i{'size'};
 	$size =~ s/ \/://g;
@@ -265,7 +264,7 @@ foreach my $i (@results)
 
 	$perfdata .= " ".uniqueTag($$i{'location'}.'_'.$$i{'name'}.'_'.$$i{'task'})."::$filename::";
 	$perfdata .= "size=$size tput=$throughput";
-	$perfdata .= " durn=".timeDiffSecs($$i{'start_tim'}, $$i{'stop_tim'});
+	$perfdata .= " durn=".timeDiffSecs($$i{'start_time'}, $$i{'stop_time'});
 
 	next if ($status eq 'RUNNING');
 	$errors++ if ($status ne 'OK');
