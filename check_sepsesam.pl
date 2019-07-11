@@ -327,10 +327,10 @@ foreach my $i (@results)
 					$statusline .= "\'<br>";
 			}
 			elsif ($status eq 'OUTDATED') {
-					$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:blue\">OUT</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
+					$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:#CC2EFA\">OUT</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
 			}
 			elsif ($status eq 'RUNNING') {
-					$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:green\">RUNNING</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
+					$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:blue\">RUNNING</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
 			}
 			else {
 					$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:green\">OK</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";

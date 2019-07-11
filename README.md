@@ -47,4 +47,16 @@ Backups that are still running will not be included in the results.
 
     --task
         The task name to check. Multiple values may be separated by commas
+		
+	--outdated
+		The time if the backup state switch to OUTDATED (in days)
+	
+	--lastbackup
+		Only show the last backupjob (may shows outdated jobs)
+		
+	--enablemsg
+		Enable error message output
+		
+	--usehtml
+		Use HTML output for monitoring systems like check-mk
 
