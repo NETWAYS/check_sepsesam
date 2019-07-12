@@ -184,41 +184,36 @@ my $exitval = 'UNKNOWN';
 
 Getopt::Long::Configure('bundling');
 my $clps = GetOptions(
-
-        "l|lastcheck=i" => \$lastCheck,
-		"o|outdated=i" => \$outdated,
-		"lastbackup" => \$lastbackup,
-		"enablemsg" => \$enablemsg,
-		"usehtml" => \$usehtml,
-        "u|until=i"     => \$until,
-        "H|host=s"      => \$hostname,
-        "T|task=s"      => \$task,
-        "w|warning=i"   => \$warn,
-        "c|critical=i"  => \$crit,
-        "anyerror!"     => \$anyerror,
-        "n|noperfdata!" => \$noperfdata,
-        "h|help"    => \$help
-
+	"l|lastcheck=i" => \$lastCheck,
+	"o|outdated=i" => \$outdated,
+	"lastbackup" => \$lastbackup,
+	"enablemsg" => \$enablemsg,
+	"usehtml" => \$usehtml,
+	"u|until=i"     => \$until,
+	"H|host=s"      => \$hostname,
+	"T|task=s"      => \$task,
+	"w|warning=i"   => \$warn,
+	"c|critical=i"  => \$crit,
+	"anyerror!"     => \$anyerror,
+	"n|noperfdata!" => \$noperfdata,
+	"h|help"    => \$help
 );
 
 pod2usage( -verbose => 2, -noperldoc => 1) if ($help);
 
 if ($lastCheck)
 {
-        # only look for backups newer than the last check
-        # lastcheck is time_t
-        # N.B. we are assuming that the times in the DB are local times
-        $after = timetToIso8601($lastCheck);
+	# only look for backups newer than the last check
+	# lastcheck is time_t
+	# N.B. we are assuming that the times in the DB are local times
+	$after = timetToIso8601($lastCheck);
 }  
 
-foreach my $i (split(':', $ENV{'PATH'}))
-{
-
-        if (-x "$i/$sql_bin")
-        {
-                $sql_path = $i; 
-                last;
-        }
+foreach my $i (split(':', $ENV{'PATH'})) {
+	if (-x "$i/$sql_bin") {
+		$sql_path = $i; 
+		last;
+	}
 }
 
 nagexit('UNKNOWN', "Binary not found ($sql_bin).\nMaybe you want to source the init script (/var/opt/sesam/var/ini/sesam2000.profile)?") unless defined($sql_path);
@@ -235,29 +230,24 @@ else {
 
 $query .= " and r.stop_time <='".timetToIso8601($until)."'" if ($until);
 
-if ($hostname =~ /,/)
-{
-        # we have a list of multiple hosts
-        my @hostlist = split(',', $hostname);
-        $query .= " and c.name in ('".join("','", @hostlist)."')";
+if ($hostname =~ /,/) {
+	# we have a list of multiple hosts
+	my @hostlist = split(',', $hostname);
+	$query .= " and c.name in ('".join("','", @hostlist)."')";
 }
-elsif ($hostname ne '')
-{
-        $query .= " and c.name ='".$hostname."'";
+elsif ($hostname ne '') {
+	$query .= " and c.name ='".$hostname."'";
 }
 
-if ($task)
-{
-        if ($task =~ /,/)
-        {
-                # we have a list of multiple tasks
-                my @tasklist = split(',', $task);
-                $query .= " and r.task in ('".join("','", @tasklist)."')";
-        }
-        else
-        {
-                $query .= " and r.task ='".$task."'";
-        }
+if ($task) {
+	if ($task =~ /,/) {
+		# we have a list of multiple tasks
+		my @tasklist = split(',', $task);
+		$query .= " and r.task in ('".join("','", @tasklist)."')";
+	}
+	else {
+		$query .= " and r.task ='".$task."'";
+	}
 }
 
 if($lastbackup) {
@@ -270,107 +260,98 @@ my $retval = `$sql_path/$sql_bin "$query"`;
 
 nagexit('UNKNOWN', "$sql_path/$sql_bin returned error ".($? >> 8).".\nMaybe you want to source the init script (/var/opt/sesam/var/ini/sesam2000.profile) in your start script?") if ($? gt 0);
 
-
-foreach my $i (split('\n', $retval))
-{
-        push (@results, {parseReply($i)}) if ($i =~ /^\|/);
+foreach my $i (split('\n', $retval)) {
+	push (@results, {parseReply($i)}) if ($i =~ /^\|/);
 }
 
 
-foreach my $i (@results)
-{
-        my $status = convertState($$i{'state'});
-        
-		# Check for backup age (older then X days (60*60*24*X))
-		if($outdated ne '') {
-			$taskunixtime = `date -d "$$i{'start_time'}" +%s`;
-			$currentunixtime = `date +%s`;
+foreach my $i (@results) {
+	my $status = convertState($$i{'state'});
 
-			if (($currentunixtime - $taskunixtime) > (60 * 60 * 24 * $outdated)) {
-					$status = "OUTDATED";
-			}
+	# Check for backup age (older then X days (60*60*24*X))
+	if ($outdated ne '') {
+		$taskunixtime = `date -d "$$i{'start_time'}" +%s`;
+		$currentunixtime = `date +%s`;
+
+		if (($currentunixtime - $taskunixtime) > (60 * 60 * 24 * $outdated)) {
+			$status = "OUTDATED";
 		}
-		
-		# format size to a readable string
-        my $size = $$i{'size'};
-        $size =~ s/ \/://g;
-        $size =~ s/NULL/0/;
-        if ($size  > (1024 * 1024)){
-                $size = sprintf("%.2f", (($size / 1024) / 1024));
-                $size .= 'TB';
-        }
-        else
-        {
-                if ($size  > 1024){
-                        $size = sprintf("%.2f", ($size / 1024));
-                        $size .= 'GB';
-
-                }
-				else
-                {
-                        $size .= 'MB';
-                }
-        }
-		
-		# monitoring systems like check-mk like html output
-		if ($usehtml) {
-				
-			if ($status eq 'FAILED' || $status eq 'BROKEN'){
-					$statusline .= "<b class=\"stmark state2\">CRIT</b> <b>$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size</b>";
-					($enablemsg) ? $statusline .= "<br><span style=\"color:gray\"> Message: $$i{'msg'}</span>" : "";
-					$statusline .= "\'<br>";
-			}
-			elsif ($status eq 'UNKNOWN' || $status eq 'WARNING'){
-					$statusline .= "<b class=\"stmark state1\">WARN</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size";
-					($enablemsg) ? $statusline .= "<br><span style=\"color:gray\"> Message: $$i{'msg'}</span>" : "";
-					$statusline .= "\'<br>";
-			}
-			elsif ($status eq 'OUTDATED') {
-					$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:#CC2EFA\">OUT</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
-			}
-			elsif ($status eq 'RUNNING') {
-					$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:blue\">RUNNING</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
-			}
-			else {
-					$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:green\">OK</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
-			}
+	}
+			
+	# format size to a readable string
+	my $size = $$i{'size'};
+	$size =~ s/ \/://g;
+	$size =~ s/NULL/0/;
+	
+	if ($size  > (1024 * 1024)) {
+		$size = sprintf("%.2f", (($size / 1024) / 1024));
+		$size .= 'TB';
+	}
+	elsif ($size  > 1024) {
+		$size = sprintf("%.2f", ($size / 1024));
+		$size .= 'GB';
+	}
+	else {
+		$size .= 'MB';
+	}
+			
+	# monitoring systems like check-mk like html output
+	if ($usehtml) {
+		if ($status eq 'FAILED' || $status eq 'BROKEN') {
+			$statusline .= "<b class=\"stmark state2\">CRIT</b> <b>$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size</b>";
+			($enablemsg) ? $statusline .= "<br><span style=\"color:gray\"> Message: $$i{'msg'}</span>" : "";
+			$statusline .= "\'<br>";
+		}
+		elsif ($status eq 'UNKNOWN' || $status eq 'WARNING') {
+			$statusline .= "<b class=\"stmark state1\">WARN</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size";
+			($enablemsg) ? $statusline .= "<br><span style=\"color:gray\"> Message: $$i{'msg'}</span>" : "";
+			$statusline .= "\'<br>";
+		}
+		elsif ($status eq 'OUTDATED') {
+			$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:#CC2EFA\">OUT</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
+		}
+		elsif ($status eq 'RUNNING') {
+			$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:blue\">RUNNING</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
 		}
 		else {
-			if ($status eq 'FAILED' || $status eq 'BROKEN'){
-					$statusline .= "$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size";
-					($enablemsg) ? $statusline .= "\n Message: $$i{'msg'}" : "";
-					$statusline .= "\' \n";
-			}
-			elsif ($status eq 'UNKNOWN' || $status eq 'WARNING'){
-					$statusline .= "$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size";
-					($enablemsg) ? $statusline .= "\n Message: $$i{'msg'}" : "";
-					$statusline .= "\' \n";
-			}
-			elsif ($status eq 'OUTDATED') {
-					$statusline .= "$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\' \n";
-			}
-			else {
-					$statusline .= "$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\' \n";
-			}
+			$statusline .= "<b class=\"stmark\" style=\"color:white;background-color:green\">OK</b> $statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\'<br>";
 		}
-		
-        # The units are actually GB/h but this may cause problems with some grapher addons :-(
-        my $throughput = $$i{'throughput'};
-        $throughput =~ s/[ \/:]//g;
-        $throughput =~ s/NULL/0GBh/;
+	}
+	else {
+		if ($status eq 'FAILED' || $status eq 'BROKEN') {
+			$statusline .= "$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size";
+			($enablemsg) ? $statusline .= "\n Message: $$i{'msg'}" : "";
+			$statusline .= "\' \n";
+		}
+		elsif ($status eq 'UNKNOWN' || $status eq 'WARNING') {
+			$statusline .= "$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size";
+			($enablemsg) ? $statusline .= "\n Message: $$i{'msg'}" : "";
+			$statusline .= "\' \n";
+		}
+		elsif ($status eq 'OUTDATED') {
+			$statusline .= "$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\' \n";
+		}
+		else {
+			$statusline .= "$statusCode $$i{'task'} - \'$status  Started at: $$i{'start_time'} Size: $size\' \n";
+		}
+	}
 
-        $perfdata .= " ".uniqueTag($$i{'location'}.'_'.$$i{'name'}.'_'.$$i{'task'})."::$filename::";
-        $perfdata .= "size=$size tput=$throughput";
-        $perfdata .= " durn=".timeDiffSecs($$i{'start_tim'}, $$i{'stop_time'});
-		
-		# Count the backup states
-        next if ($status eq 'RUNNING');
-        $errors++ if ($status eq 'FAILED' || $status eq 'BROKEN' || $status eq 'OUTDATED');
-        $warnings++ if ($status eq 'UNKNOWN' || $status eq 'WARNING');
-        $completed++;
-}
+	# The units are actually GB/h but this may cause problems with some grapher addons :-(
+	my $throughput = $$i{'throughput'};
+	$throughput =~ s/[ \/:]//g;
+	$throughput =~ s/NULL/0GBh/;
 
-$perfdata = " sepsesam::check_multi::plugins=$completed time=0.00".$perfdata;
+	$perfdata .= " ".uniqueTag($$i{'location'}.'_'.$$i{'name'}.'_'.$$i{'task'})."::$filename::";
+	$perfdata .= "size=$size tput=$throughput";
+	$perfdata .= " durn=".timeDiffSecs($$i{'start_tim'}, $$i{'stop_time'});
+			
+	# Count the backup states
+	next if ($status eq 'RUNNING');
+	$errors++ if ($status eq 'FAILED' || $status eq 'BROKEN' || $status eq 'OUTDATED');
+	$warnings++ if ($status eq 'UNKNOWN' || $status eq 'WARNING');
+	$completed++;
+	
+} # End for loop
 
 my $retstr = "";
 
@@ -381,121 +362,110 @@ else {
 	$retstr = ($completed - $errors)." of $completed backups successful with $warnings warnings \n";
 }
 
+if ($errors > 0 ) {
+	$exitval = "2 SEP-Sesam-$hostname - CRITICAL";
+}
+elsif (($completed - $errors) < $crit) {
+	$exitval = "2 SEP-Sesam-$hostname - CRITICAL";
+}
+elsif ($warnings > 0) {
+	$exitval = "1 SEP-Sesam-$hostname - WARNING";
+}
+else {
+	$exitval = "0 SEP-Sesam-$hostname - OK";
+}
 
-if ($errors > 0 )
-{
-        $exitval = "2 SEP-Sesam-$hostname - CRITICAL";
-}
-elsif (($completed - $errors) < $crit)
-{
-        $exitval = "2 SEP-Sesam-$hostname - CRITICAL";
-}
-elsif ($warnings > 0)
-{
-        $exitval = "1 SEP-Sesam-$hostname - WARNING";
-}
-else
-{
-        $exitval = "0 SEP-Sesam-$hostname - OK";
-}
+$perfdata = " sepsesam::check_multi::plugins=$completed time=0.00".$perfdata;
 
 $perfdata = '' if ($noperfdata);
 nagexit($exitval, "$retstr $perfdata $statusline");
 
+sub uniqueTag {
+	my ($tag) = @_;
 
-sub uniqueTag
-{
-        my ($tag) = @_;
+	$tag =~ s/[^a-zA-Z0-9_\.-]//g;
 
-        $tag =~ s/[^a-zA-Z0-9_\.-]//g;
-
-        my $suffix = '';
-        while (exists($taghash{$tag.$suffix}))
-        {
-                $suffix++;
-        }
-        $taghash{$tag.$suffix} = '1';
-        return ($tag.$suffix);
+	my $suffix = '';
+	
+	while (exists($taghash{$tag.$suffix})) {
+		$suffix++;
+	}
+	
+	$taghash{$tag.$suffix} = '1';
+	return ($tag.$suffix);
 }
 
 
-sub parseReply
-{
-        # Creates a hash from the reply
+sub parseReply {
+	# Creates a hash from the reply
 
-        my ($line) = @_;
-        my %out;
+	my ($line) = @_;
+	my %out;
 
-        for my $i (split('\|', $line))
-        {
-                $i =~ /([^=]*)=(.*)/ or next;
-                $out{$1} = $2;
-        }
+	for my $i (split('\|', $line))
+	{
+		$i =~ /([^=]*)=(.*)/ or next;
+		$out{$1} = $2;
+	}
 
-        return %out;
+	return %out;
 }
 
-sub nagexit
-{
-        my $errlevel = shift;
-        my $string = shift;
+sub nagexit {
+	my $errlevel = shift;
+	my $string = shift;
 
-        print "$errlevel: $string\n";
-        exit $ERRORS{$errlevel};
+	print "$errlevel: $string\n";
+	exit $ERRORS{$errlevel};
 }
 
-sub timetToIso8601
-{
-        # convert a time_t value to YYYY-MM-DD HH:MM:SS
+sub timetToIso8601 {
+	# convert a time_t value to YYYY-MM-DD HH:MM:SS
 
-        my ($t) = @_;
+	my ($t) = @_;
 
-        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($t);
-        return (sprintf('%04d-%02d-%02d %02d:%02d:%02d', ($year + 1900), ($mon + 1), $mday, $hour, $min, $sec));
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($t);
+	return (sprintf('%04d-%02d-%02d %02d:%02d:%02d', ($year + 1900), ($mon + 1), $mday, $hour, $min, $sec));
 }
 
-sub timeDiffSecs
-{
-        my ($start, $end) = @_;
+sub timeDiffSecs {
+	my ($start, $end) = @_;
 
-
-        my $timediff=localtime($end)-localtime($start);
-        return (abs($timediff));
+	my $timediff=localtime($end)-localtime($start);
+	return (abs($timediff));
 }
 
-sub timeDiff
-{
-        my ($start, $end) = @_;
+sub timeDiff {
+	my ($start, $end) = @_;
 
+	my $timediff=localtime($end)-localtime($start);
 
-        my $timediff=localtime($end)-localtime($start);
+	my $days = int($timediff / 86400);
+	$timediff = $timediff - ($days * 86400);
+	my $hours = int($timediff / 3600);
+	$timediff = $timediff - ($hours * 3600);
+	my $mins = int($timediff / 60);
+	$timediff = $timediff - ($mins * 60);
 
-        my $days = int($timediff / 86400);
-        $timediff = $timediff - ($days * 86400);
-        my $hours = int($timediff / 3600);
-        $timediff = $timediff - ($hours * 3600);
-        my $mins = int($timediff / 60);
-        $timediff = $timediff - ($mins * 60);
+	return (0) if ($days > 99);
 
-        return (0) if ($days > 99);
-
-        return (sprintf('%02d:%02d:%02d:%02s', $days, $hours, $mins, $timediff));
+	return (sprintf('%02d:%02d:%02d:%02s', $days, $hours, $mins, $timediff));
 }
 
-sub convertState
-{
-        # convert the sesam state to a suitable return value
+sub convertState {
+	# convert the sesam state to a suitable return value
 
-        my %stateMap = (
-                '0' => 'OK',
-                'X' => 'FAILED',
-                'a' => 'RUNNING',
-                '1' => 'WARNING',
-                '3' => 'BROKEN'
-        );
-        my ($state) = @_;
+	my %stateMap = (
+		'0' => 'OK',
+		'X' => 'FAILED',
+		'a' => 'RUNNING',
+		'1' => 'WARNING',
+		'3' => 'BROKEN'
+	);
+	
+	my ($state) = @_;
 
-        return ($stateMap{$state}) if defined($stateMap{$state});
-        return 'UNKNOWN';
+	return ($stateMap{$state}) if defined($stateMap{$state});
+	return 'UNKNOWN';
 }
 
