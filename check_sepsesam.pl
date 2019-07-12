@@ -190,10 +190,10 @@ my $debug;
 Getopt::Long::Configure('bundling');
 my $clps = GetOptions(
     "l|lastcheck=i" => \$lastCheck,
-    "o|outdated=i" => \$outdated,
-    "lastbackup" => \$lastbackup,
-    "enablemsg" => \$enablemsg,
-    "usehtml" => \$usehtml,
+    "o|outdated=i"  => \$outdated,
+    "lastbackup"    => \$lastbackup,
+    "enablemsg"     => \$enablemsg,
+    "usehtml"       => \$usehtml,
     "u|until=i"     => \$until,
     "H|host=s"      => \$hostname,
     "T|task=s"      => \$task,
@@ -201,8 +201,8 @@ my $clps = GetOptions(
     "c|critical=i"  => \$crit,
     "anyerror!"     => \$anyerror,
     "n|noperfdata!" => \$noperfdata,
-    "d|debug"    => \$debug,
-    "h|help"    => \$help
+    "d|debug"       => \$debug,
+    "h|help"        => \$help
 );
 
 pod2usage( -verbose => 2, -noperldoc => 1) if ($help);
