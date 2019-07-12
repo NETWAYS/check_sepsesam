@@ -6,7 +6,7 @@
 
 =head1 COPYRIGHT
 
- 
+
 This software is Copyright (c) 2009 NETWAYS GmbH, William Preston
                                <support@netways.de>
 
@@ -19,9 +19,9 @@ the GNU General Public License. A copy of that license should have
 been provided with this software, but in any event can be snarfed
 from http://www.fsf.org.
 
-This work is distributed in the hope that it will be useful, but 
+This work is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -36,7 +36,7 @@ CONTRIBUTION SUBMISSION POLICY:
 (The following paragraph is not intended to limit the rights granted
 to you to modify and distribute this software under the terms of
 the GNU General Public License and is only of importance to you if
-you choose to contribute your changes and enhancements to the 
+you choose to contribute your changes and enhancements to the
 community by submitting them to NETWAYS GmbH.)
 
 By intentionally submitting any modifications, corrections or
@@ -60,7 +60,7 @@ Shows the status of backup jobs
 
 =head1 OPTIONS
 
-check_sepsesam [options] 
+check_sepsesam [options]
 
 =over
 
@@ -115,7 +115,7 @@ Prints debug information (like sql query at the start)
 This plugin checks the status of backups in the SEP Sesam Database.
 
 It requires that the Sesam init script has been sourced; e.g.
-add the following line to /etc/init.d/nagios 
+add the following line to /etc/init.d/nagios
 . /var/opt/sesam/var/ini/sesam2000.profile
 
 The plugin checks the status of all backups which match the Host / Task that
@@ -180,7 +180,7 @@ my $errors = 0;
 my $warnings = 0;
 my $completed = 0;
 my $after = '1970-01-01 00:00:00';
-my $hostname = ''; 
+my $hostname = '';
 my $warn = 0;
 my $crit = 0;
 my $exitval = 'UNKNOWN';
@@ -213,11 +213,11 @@ if ($lastCheck)
     # lastcheck is time_t
     # N.B. we are assuming that the times in the DB are local times
     $after = timetToIso8601($lastCheck);
-}  
+}
 
 foreach my $i (split(':', $ENV{'PATH'})) {
     if (-x "$i/$sql_bin") {
-        $sql_path = $i; 
+        $sql_path = $i;
         last;
     }
 }
@@ -284,12 +284,12 @@ foreach my $i (@results) {
             $status = "OUTDATED";
         }
     }
-            
+
     # format size to a readable string
     my $size = $$i{'size'};
     $size =~ s/ \/://g;
     $size =~ s/NULL/0/;
-    
+
     if ($size  > (1024 * 1024)) {
         $size = sprintf("%.2f", (($size / 1024) / 1024));
         $size .= 'TB';
@@ -301,7 +301,7 @@ foreach my $i (@results) {
     else {
         $size .= 'MB';
     }
-            
+
     # monitoring systems like check-mk like html output
     if ($usehtml) {
         if ($status eq 'FAILED' || $status eq 'BROKEN') {
@@ -351,13 +351,13 @@ foreach my $i (@results) {
     $perfdata .= " ".uniqueTag($$i{'location'}.'_'.$$i{'name'}.'_'.$$i{'task'})."::$filename::";
     $perfdata .= "size=$size tput=$throughput";
     $perfdata .= " durn=".timeDiffSecs($$i{'start_tim'}, $$i{'stop_time'});
-            
+
     # Count the backup states
     next if ($status eq 'RUNNING');
     $errors++ if ($status eq 'FAILED' || $status eq 'BROKEN' || $status eq 'OUTDATED');
     $warnings++ if ($status eq 'UNKNOWN' || $status eq 'WARNING');
     $completed++;
-    
+
 } # End for loop
 
 my $retstr = "";
@@ -393,11 +393,11 @@ sub uniqueTag {
     $tag =~ s/[^a-zA-Z0-9_\.-]//g;
 
     my $suffix = '';
-    
+
     while (exists($taghash{$tag.$suffix})) {
         $suffix++;
     }
-    
+
     $taghash{$tag.$suffix} = '1';
     return ($tag.$suffix);
 }
@@ -469,10 +469,9 @@ sub convertState {
         '1' => 'WARNING',
         '3' => 'BROKEN'
     );
-    
+
     my ($state) = @_;
 
     return ($stateMap{$state}) if defined($stateMap{$state});
     return 'UNKNOWN';
 }
-
