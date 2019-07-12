@@ -1,6 +1,5 @@
 #!/usr/bin/perl
-# $Id: check_sepsesam.pl 1562 2009-11-05 12:41:01Z wpreston $
-#
+
 # edited by hermanntoast at 11.07.2019 (www.hermann-toast.de / info@hermann-toast.de)
 
 =pod
