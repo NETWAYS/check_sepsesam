@@ -1,11 +1,8 @@
 #!/usr/bin/perl
 
-# edited by hermanntoast at 11.07.2019 (www.hermann-toast.de / info@hermann-toast.de)
-
 =pod
 
 =head1 COPYRIGHT
-
 
 This software is Copyright (c) 2009 NETWAYS GmbH, William Preston
                                <support@netways.de>
