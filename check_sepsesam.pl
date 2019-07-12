@@ -155,9 +155,10 @@ check_sepsesam.pl -H host1,host2,host3 --lastbackup --usehtml --outdated=7
 
 =cut
 
-use Data::Dumper;
+
 use Getopt::Long;
 use Pod::Usage;
+
 my %ERRORS=('OK'=>0,'WARNING'=>1,'CRITICAL'=>2,'UNKNOWN'=>3,'DEPENDENT'=>4);
 my @results;
 my %taghash;
