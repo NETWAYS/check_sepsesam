@@ -104,6 +104,10 @@ The time if the backup state switch to OUTDATED (in days)
 
 Only show the last backupjob (may shows outdated jobs)
 
+=item   B<--debug>
+
+Prints debug information (like sql query at the start)
+
 =back
 
 =head1 DESCRIPTION
@@ -180,6 +184,7 @@ my $hostname = '';
 my $warn = 0;
 my $crit = 0;
 my $exitval = 'UNKNOWN';
+my $debug;
 
 
 Getopt::Long::Configure('bundling');
@@ -196,6 +201,7 @@ my $clps = GetOptions(
 	"c|critical=i"  => \$crit,
 	"anyerror!"     => \$anyerror,
 	"n|noperfdata!" => \$noperfdata,
+	"d|debug"    => \$debug,
 	"h|help"    => \$help
 );
 
@@ -255,7 +261,8 @@ if($lastbackup) {
 	$query .= " ORDER BY r.task, r.start_time DESC";
 }
 
-print "$sql_path/$sql_bin \"$query\"\n";
+if ($debug) { print "$sql_path/$sql_bin \"$query\"\n"; }
+
 my $retval = `$sql_path/$sql_bin "$query"`;
 
 nagexit('UNKNOWN', "$sql_path/$sql_bin returned error ".($? >> 8).".\nMaybe you want to source the init script (/var/opt/sesam/var/ini/sesam2000.profile) in your start script?") if ($? gt 0);
