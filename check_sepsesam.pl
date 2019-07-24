@@ -168,7 +168,7 @@ my $filename = $temparr[$#temparr];
 my $sql_bin = 'sm_db';
 my $sql_path = undef;
 my $lastCheck = undef;
-my $outdated = undef;
+my $outdated_tol = undef;
 my $lastbackup;
 my $enablemsg;
 my $usehtml;
@@ -188,7 +188,7 @@ my $debug;
 Getopt::Long::Configure('bundling');
 my $clps = GetOptions(
     "l|lastcheck=i" => \$lastCheck,
-    "o|outdated=i"  => \$outdated,
+    "o|outdated=i"  => \$outdated_tol,
     "lastbackup"    => \$lastbackup,
     "enablemsg"     => \$enablemsg,
     "usehtml"       => \$usehtml,
@@ -226,7 +226,7 @@ my $query = "";
 
 if ($lastbackup) {
     # query to get only the last backupjob
-    $query .= "SELECT DISTINCT ON (r.task) c.name, r.task, l.name as location, r.start_time, r.stop_time, r.throughput, r.state, r.msg, (ROUND((r.blocks/1024),2)) as size FROM clients AS c LEFT JOIN results AS r ON r.client = c.name LEFT JOIN locations AS l ON c.location=l.id  WHERE r.task IS NOT NULL";
+    $query .= "SELECT DISTINCT ON (r.task) c.name, r.task, COALESCE(s.p_base, s2.p_base) AS schedule, l.name as location, r.start_time, r.stop_time, r.throughput, r.state, r.msg, (ROUND((r.blocks/1024),2)) as size FROM clients AS c LEFT JOIN results AS r ON r.client = c.name LEFT JOIN locations AS l ON c.location=l.id LEFT JOIN task_group_relations AS tg ON r.task = tg.task LEFT JOIN task_events AS te ON r.task = te.object LEFT JOIN task_events AS te2 ON tg.grp_name = te2.object LEFT JOIN schedules AS s ON te.schedule = s.name LEFT JOIN schedules AS s2 ON te2.schedule = s2.name WHERE COALESCE(s.p_base, s2.p_base) IS NOT NULL";
 }
 else {
     $query .= "select c.name,l.name as location,r.task,r.start_time,r.stop_time,(round((r.blocks/1024.),2)) as size,r.throughput,r.state,r.msg from clients as c left join locations as l on c.location=l.id  left join results as r on r.client=c.name where r.stop_time >'".$after."' and r.state<>'a'";
@@ -269,16 +269,37 @@ foreach my $i (split('\n', $retval)) {
     push (@results, {parseReply($i)}) if ($i =~ /^\|/);
 }
 
-
 foreach my $i (@results) {
     my $status = convertState($$i{'state'});
-
+	
+	my $schedule = $$i{'schedule'};
+	my $outdated = 0;
+	
+	if ($schedule eq "HOU") {
+		$outdated = 1;
+	}
+	elsif ($schedule eq "DAY") {
+		$outdated = 7;
+	}
+	elsif ($schedule eq "WEE") {
+		$outdated = 7;
+	}
+	elsif ($schedule eq "MON") {
+		$outdated = 60;
+	}
+	elsif ($schedule eq "YEA") {
+		$outdated = 730;
+	}
+	else {
+		$outdated = 7;
+	}
+	
     # Check for backup age (older then X days (60*60*24*X))
     if ($outdated ne '') {
         $taskunixtime = `date -d "$$i{'start_time'}" +%s`;
         $currentunixtime = `date +%s`;
 
-        if (($currentunixtime - $taskunixtime) > (60 * 60 * 24 * $outdated)) {
+        if (($currentunixtime - $taskunixtime) > ((60 * 60 * 24 * $outdated) + $outdated_tol)) {
             $status = "OUTDATED";
         }
     }
@@ -352,8 +373,8 @@ foreach my $i (@results) {
 
     # Count the backup states
     next if ($status eq 'RUNNING');
-    $errors++ if ($status eq 'FAILED' || $status eq 'BROKEN' || $status eq 'OUTDATED');
-    $warnings++ if ($status eq 'UNKNOWN' || $status eq 'WARNING');
+    $errors++ if ($status eq 'FAILED' || $status eq 'BROKEN');
+    $warnings++ if ($status eq 'UNKNOWN' || $status eq 'WARNING' || $status eq 'OUTDATED');
     $completed++;
 
 } # End for loop
