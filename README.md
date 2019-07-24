@@ -74,31 +74,31 @@ Backups that are still running will not be included in the results.
 check_sepsesam.pl
 - show all tasks from all hosts in database
 
-check_sepsesam.pl -H <HOSTNAME>
-- show all task from <HOSTNAME> in database
+check_sepsesam.pl -H HOSTNAME
+- show all task from HOSTNAME in database
 
-check_sepsesam.pl -H <HOSTNAME1>, <HOSTNAME2>, <HOSTNAME3>
-- show all task from <HOSTNAME1>, <HOSTNAME2>, <HOSTNAME3> in database
+check_sepsesam.pl -H HOSTNAME1, HOSTNAME2, HOSTNAME3
+- show all task from HOSTNAME1, HOSTNAME2, HOSTNAME3 in database
 
-check_sepsesam.pl -H <HOSTNAME> --lastcheck `date -d "yesterday 08:00" +%s` --until `date -d "today 08:00" +%s`
-- show all task from <HOSTNAME> between yesterday 8 AM to today 8 AM
+check_sepsesam.pl -H HOSTNAME --lastcheck `date -d "yesterday 08:00" +%s` --until `date -d "today 08:00" +%s`
+- show all task from HOSTNAME between yesterday 8 AM to today 8 AM
 
-check_sepsesam.pl -H <HOSTNAME> --lastbackup
-- show all task from <HOSTNAME> but only the newest backups (maybe outdated)
+check_sepsesam.pl -H HOSTNAME --lastbackup
+- show all task from HOSTNAME but only the newest backups (maybe outdated)
 
-check_sepsesam.pl -H <HOSTNAME> --lastbackup --outdated=7
-- show all task from <HOSTNAME> but only the newest backups and mark all backups older then 7 days as OUTDATED
+check_sepsesam.pl -H HOSTNAME --lastbackup --outdated=7
+- show all task from HOSTNAME but only the newest backups and mark all backups older then 7 days as OUTDATED
 
-check_sepsesam.pl -H <HOSTNAME> --lastbackup --outdated=7 --enablemsg
-- show all task from <HOSTNAME> but only the newest backups and mark all backups older then 7 days as OUTDATED
+check_sepsesam.pl -H HOSTNAME --lastbackup --outdated=7 --enablemsg
+- show all task from HOSTNAME but only the newest backups and mark all backups older then 7 days as OUTDATED
   and show the error message to all FAILED and WARNING states
 
-check_sepsesam.pl -H <HOSTNAME> --lastbackup --outdated=7 --enablemsg --usehtml
-- show all task from <HOSTNAME> but only the newest backups and mark all backups older then 7 days as OUTDATED
+check_sepsesam.pl -H HOSTNAME --lastbackup --outdated=7 --enablemsg --usehtml
+- show all task from HOSTNAME but only the newest backups and mark all backups older then 7 days as OUTDATED
   and show the error message to all FAILED and WARNING states and format with HTML (for eg. CheckMK)
 
-check_sepsesam.pl -H <HOSTNAME> --lastbackup --outdated=7 --enablemsg --usehtml --noperfdata
-- show all task from <HOSTNAME> but only the newest backups and mark all backups older then 7 days as OUTDATED
+check_sepsesam.pl -H HOSTNAME --lastbackup --outdated=7 --enablemsg --usehtml --noperfdata
+- show all task from HOSTNAME but only the newest backups and mark all backups older then 7 days as OUTDATED
   and show the error message to all FAILED and WARNING states and format with HTML (for eg. CheckMK)
   and disable all performance data (performance data make problems with some monitoring systems)
 
