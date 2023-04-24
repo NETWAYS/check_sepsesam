@@ -368,16 +368,20 @@ else {
 }
 
 if ($errors > 0 ) {
-    $exitval = "2 SEP-Sesam-$hostname - CRITICAL";
+    $exitval = "CRITICAL";
+    $retstr = "SEP-Sesam-$hostname - CRITICAL";
 }
 elsif (($completed - $errors) < $crit) {
-    $exitval = "2 SEP-Sesam-$hostname - CRITICAL";
+    $exitval = "CRITICAL";
+    $retstr = "SEP-Sesam-$hostname - CRITICAL";
 }
 elsif ($warnings > 0) {
-    $exitval = "1 SEP-Sesam-$hostname - WARNING";
+    $exitval = "WARNING";
+    $retstr = "SEP-Sesam-$hostname - WARNING";
 }
 else {
-    $exitval = "0 SEP-Sesam-$hostname - OK";
+    $exitval = "OK";
+    $retstr = "SEP-Sesam-$hostname - OK";
 }
 
 $perfdata = " sepsesam::check_multi::plugins=$completed time=0.00".$perfdata;
@@ -419,6 +423,9 @@ sub parseReply {
 sub nagexit {
     my $errlevel = shift;
     my $string = shift;
+
+    # Default exit
+    $errlevel = 'UNKNOWN' unless ($errlevel);
 
     print "$errlevel: $string\n";
     exit $ERRORS{$errlevel};
